@@ -10,13 +10,11 @@
     set: function (k) { try { sessionStorage.setItem(k, '1'); } catch (e) {} }
   };
 
-  /* --- Links: markup keeps the site's root-relative paths. Off castlegroup.com (this prototype) point them at the live site. --- */
-  var LIVE = 'https://castlegroup.com';
-  function liveLinks(scope) {
-    if (/(^|\.)castlegroup\.com$/.test(location.hostname)) return;
-    $$('a[href^="/"]', scope).forEach(function (a) { a.setAttribute('href', LIVE + a.getAttribute('href')); });
-  }
-  liveLinks(document);
+  /* --- Links: this is a prototype, so nothing leaves the page. Placeholder links (href="#") do nothing on click. --- */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href="#"]');
+    if (a) e.preventDefault();
+  });
 
   /* --- Loader: once per session, never under reduced motion, hard cap 2.5s --- */
   function heroIn() { root.classList.add('hero-in'); }
