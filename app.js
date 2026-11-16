@@ -71,14 +71,34 @@
 
   /* --- Mobile menu: built from the header so every link stays in one place --- */
   var mm = $('#mm'), mmBody = $('#mm-body');
-  $$('.nav__list > li').forEach(function (li) {
+  /* Each section with sub-pages is a dropdown: tap the heading to open its list, one open at a time. */
+  var mmGroups = [];
+  function mmSet(g, open) {
+    g.classList.toggle('open', open);
+    var b = $('.mm__head', g); if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  $$('.nav__list > li').forEach(function (li, i) {
     var g = document.createElement('div');
     g.className = 'mm__group';
-    g.appendChild($('a', li).cloneNode(true));
-    var sub = $('.sub', li);
-    if (sub) { var u = sub.cloneNode(true); u.className = ''; g.appendChild(u); }
-    mmBody.appendChild(g);
+    var link = $('a', li), sub = $('.sub', li);
+    if (!sub) { g.appendChild(link.cloneNode(true)); mmBody.appendChild(g); return; }
+    var head = document.createElement('button');
+    head.type = 'button'; head.className = 'mm__head';
+    head.setAttribute('aria-expanded', 'false'); head.setAttribute('aria-controls', 'mm-sub-' + i);
+    head.innerHTML = '<span>' + link.textContent + '</span><i aria-hidden="true"></i>';
+    var panel = document.createElement('div');
+    panel.className = 'mm__panel'; panel.id = 'mm-sub-' + i;
+    var u = sub.cloneNode(true); u.className = '';
+    var wrap = document.createElement('div'); wrap.appendChild(u); panel.appendChild(wrap);
+    head.addEventListener('click', function () {
+      var open = !g.classList.contains('open');
+      mmGroups.forEach(function (o) { mmSet(o, false); });
+      mmSet(g, open);
+    });
+    g.appendChild(head); g.appendChild(panel);
+    mmGroups.push(g); mmBody.appendChild(g);
   });
+  mm.addEventListener('close', function () { mmGroups.forEach(function (o) { mmSet(o, false); }); });
   var mu = document.createElement('div');
   mu.className = 'mm__util';
   $$('.util a').forEach(function (a) { mu.appendChild(a.cloneNode(true)); });
@@ -86,7 +106,9 @@
   $('#burger').addEventListener('click', function () { mm.showModal(); });
   $('#mm-close').addEventListener('click', function () { mm.close(); });
   mm.addEventListener('click', function (e) { if (e.target.closest('a')) mm.close(); });
-  if (/[?&]menu=1/.test(location.search)) mm.showModal(); /* review aid */
+  /* review aid: ?menu=1 opens the menu, ?menu=2 opens it with Who We Are expanded */
+  var mmQ = /[?&]menu=(\d)/.exec(location.search);
+  if (mmQ) { mm.showModal(); if (mmQ[1] === '2' && mmGroups[0]) mmSet(mmGroups[0], true); }
 
   /* --- Videos: muted, pausable; the careers video only loads when it nears the screen --- */
   $$('.vctl').forEach(function (btn) {

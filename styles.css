@@ -146,10 +146,21 @@ html.loading-done .loader{opacity:0;pointer-events:none}
 .mm__top{display:flex;height:60px;border-bottom:1px solid var(--line-l);flex:none}
 .mm__top .bar__cta{margin-left:0;flex:1}
 .mm__body{overflow:auto;padding:8px var(--pad) 40px;-webkit-overflow-scrolling:touch}
-.mm__group{padding:20px 0;border-bottom:1px solid var(--line-l)}
-.mm__group>a{display:block;font-family:var(--flare);text-transform:uppercase;font-size:26px;line-height:1.1}
-.mm__group ul{display:flex;flex-wrap:wrap;gap:4px 22px;margin-top:10px}
-.mm__group ul a,.mm__util a{display:block;padding:6px 0;font-size:14.5px;color:rgba(255,255,255,.78)}
+.mm__group{border-bottom:1px solid var(--line-l)}
+.mm__group>a,.mm__head{display:flex;align-items:center;justify-content:space-between;width:100%;padding:20px 0;border:0;background:none;color:inherit;text-align:left;
+  font-family:var(--flare);text-transform:uppercase;font-size:26px;line-height:1.1;transition:color .3s}
+.mm__head i{position:relative;flex:none;width:14px;height:14px;margin-left:16px}
+.mm__head i::before,.mm__head i::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:currentColor;transition:transform .4s var(--ease)}
+.mm__head i::after{transform:rotate(90deg)}
+.mm__group.open .mm__head{color:var(--gold-hi)}
+.mm__group.open .mm__head i::after{transform:rotate(0)}
+.mm__panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}
+.mm__panel>div{overflow:hidden;min-height:0}
+.mm__group.open .mm__panel{grid-template-rows:1fr}
+.mm__panel ul{padding:0 0 18px;border-left:1px solid var(--gold);margin-left:2px}
+.mm__panel ul a{display:block;padding:9px 0 9px 18px;font-size:15px;color:rgba(255,255,255,.78)}
+.mm__group:not(.open) .mm__panel a{visibility:hidden;transition:visibility 0s .45s}
+.mm__util a{display:block;padding:6px 0;font-size:14.5px;color:rgba(255,255,255,.78)}
 .mm__util{display:grid;grid-template-columns:1fr 1fr;gap:2px 20px;padding-top:24px}
 .mm__util a{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:500}
 .mm a:hover{color:var(--gold-hi)}
