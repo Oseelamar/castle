@@ -12,9 +12,33 @@
 
   /* --- Links: this is a prototype, so nothing leaves the page. Placeholder links (href="#") do nothing on click. --- */
   document.addEventListener('click', function (e) {
-    var a = e.target.closest && e.target.closest('a[href="#"]');
-    if (a) e.preventDefault();
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var id = a.getAttribute('href').slice(1);
+    e.preventDefault();
+    if (id) jumpTo(document.getElementById(id));
   });
+  /* In-page jumps: sections below the fold start at an estimated height and take their real height as they
+     render, which moves the target. After each (smooth) scroll settles, aim again until it is in place. */
+  function jumpTo(el) {
+    if (!el) return;
+    var tries = 0;
+    var go = function () {
+      el.scrollIntoView({ block: 'start' });
+      var settled = false;
+      var after = function () {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener('scrollend', after);
+        setTimeout(function () {
+          if (Math.abs(el.getBoundingClientRect().top) > 2 && ++tries < 6) go();
+        }, 60);
+      };
+      window.addEventListener('scrollend', after);
+      setTimeout(after, 1400); /* browsers without scrollend */
+    };
+    go();
+  }
 
   /* --- Loader: once per session, never under reduced motion, hard cap 2.5s --- */
   function heroIn() { root.classList.add('hero-in'); }
