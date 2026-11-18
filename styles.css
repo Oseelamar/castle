@@ -527,7 +527,7 @@ html.js:not(.calm) .card__img:not(.in) img{transform:scale(1.14)}
 html.js:not(.calm) .card__img img{transition:transform 1.8s var(--ease)}
 
 /* careers video settles from a slight zoom as its section is uncovered */
-html.js:not(.calm) .careers .careers__video{transform:scale(1.1);transition:transform 2.4s var(--ease)}
+html.js:not(.calm) .careers .careers__video{transform:scale(1.1);transition:transform 2.4s var(--ease),opacity .8s ease}
 html.js:not(.calm) .careers.in .careers__video{transform:none}
 
 /* the cream About panel opens from the bottom just behind its photo */

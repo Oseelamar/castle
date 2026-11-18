@@ -134,9 +134,10 @@
 <!-- 2) HERO -->
 <section class="hero" aria-label="Property Management Services">
   <picture><source type="image/avif" srcset="img/opt/hero-720.avif 720w, img/opt/hero-960.avif 960w, img/opt/hero-1920.avif 1920w" sizes="100vw"><img class="hero__poster" src="img/opt/hero-1920.jpg" srcset="img/opt/hero-720.jpg 720w, img/opt/hero-960.jpg 960w, img/opt/hero-1920.jpg 1920w" sizes="100vw" alt="" fetchpriority="high"></picture>
-  <!-- Video: castlegroup.com blocks its video files on other sites, so it needs a self-hosted copy.
-       Put its path in data-src (e.g. data-src="video/hero.mp4") and app.js loads it after the page has loaded. -->
-  <video class="hero__video" id="hero-video" muted loop playsinline preload="none"></video>
+  <!-- Self-hosted, compressed copies (no audio). app.js loads the video after the page has finished loading:
+       data-src-sm on phones, data-src on larger screens. -->
+  <video class="hero__video" id="hero-video" muted loop playsinline preload="none"
+    data-src="video/hero-1280.mp4" data-src-sm="video/hero-960.mp4"></video>
   <div class="hero__shade"></div>
 
   <div class="hero__content">
@@ -148,7 +149,7 @@
         <a class="btn btn--light" href="#">Resident Center</a>
       </div>
       <div class="hero__aside">
-        <button class="vctl" type="button" hidden data-video="hero-video" aria-pressed="false"><span class="vctl__ico" aria-hidden="true"></span><span class="vctl__txt">Pause</span></button>
+        <button class="vctl" type="button" data-video="hero-video" aria-pressed="false"><span class="vctl__ico" aria-hidden="true"></span><span class="vctl__txt">Pause</span></button>
         <a class="scrollcue" href="#intro"><span>Scroll</span><i aria-hidden="true"></i></a>
       </div>
     </div>
@@ -422,7 +423,7 @@
 <section class="careers dark wipe">
   <picture><source type="image/avif" srcset="img/opt/iStock-692292412-1-1-scaled.avif"><img class="careers__video careers__poster" loading="lazy" decoding="async" src="img/opt/iStock-692292412-1-1-scaled.jpg" alt=""></picture>
   <video class="careers__video" id="careers-video" muted loop playsinline preload="none" data-autoplay
-    ></video><!-- needs a self-hosted copy in data-src, as with the hero video -->
+    data-src="video/careers-1280.mp4" data-src-sm="video/careers-960.mp4"></video>
   <div class="careers__shade"></div>
   <div class="wrap careers__grid">
     <div class="careers__copy">
@@ -430,7 +431,7 @@
       <p class="rv" style="--d:.1s">We’re more than just a community management company – we’re a family. If you’re ready to work with passionate people who are collaborative and creative, give back to the community, and strive to deliver exceptional service, apply today.</p>
       <div class="btns rv" style="--d:.2s">
         <a class="btn btn--gold" href="#">Apply</a>
-        <button class="vctl" type="button" hidden data-video="careers-video" aria-pressed="false"><span class="vctl__ico" aria-hidden="true"></span><span class="vctl__txt">Pause</span></button>
+        <button class="vctl" type="button" data-video="careers-video" aria-pressed="false"><span class="vctl__ico" aria-hidden="true"></span><span class="vctl__txt">Pause</span></button>
       </div>
     </div>
   </div>

@@ -114,7 +114,11 @@
          page has finished loading, the careers video when it nears the screen. A photo sits underneath
          and the video fades in once it is actually playing. --- */
   function loadVid(v) {
-    if (v && v.dataset.src) { v.src = v.dataset.src; v.removeAttribute('data-src'); v.load(); }
+    if (!v || !v.dataset.src) return;
+    var small = v.dataset.srcSm && window.innerWidth < 760;
+    v.src = small ? v.dataset.srcSm : v.dataset.src;
+    v.removeAttribute('data-src'); v.removeAttribute('data-src-sm');
+    v.load();
   }
   $$('video').forEach(function (v) {
     v.addEventListener('playing', function () { v.classList.add('is-playing'); });
