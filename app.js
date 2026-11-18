@@ -36,7 +36,7 @@
   /* --- Header: transparent over the hero, slim black bar after --- */
   var hdr = $('#hdr');
   function onScrollHeader() { hdr.classList.toggle('is-stuck', window.scrollY > 40); }
-  onScrollHeader();
+  requestAnimationFrame(onScrollHeader); /* first read waits for the first frame instead of forcing layout during load */
   window.addEventListener('scroll', onScrollHeader, { passive: true });
 
   /* Dropdowns: hover and focus are CSS; the caret button covers touch, Esc closes. */
@@ -110,12 +110,33 @@
   var mmQ = /[?&]menu=(\d)/.exec(location.search);
   if (mmQ) { mm.showModal(); if (mmQ[1] === '2' && mmGroups[0]) mmSet(mmGroups[0], true); }
 
-  /* --- Videos: muted, pausable; the careers video only loads when it nears the screen --- */
+  /* --- Videos: muted, pausable. Each keeps its file in data-src until needed: the hero video after the
+         page has finished loading, the careers video when it nears the screen. A photo sits underneath
+         and the video fades in once it is actually playing. --- */
+  function loadVid(v) {
+    if (v && v.dataset.src) { v.src = v.dataset.src; v.removeAttribute('data-src'); v.load(); }
+  }
+  $$('video').forEach(function (v) {
+    v.addEventListener('playing', function () { v.classList.add('is-playing'); });
+  });
+  var heroVid = $('#hero-video');
+  if (heroVid && !calm) {
+    var startHero = function () {
+      if (heroVid.dataset.userPaused) return;
+      loadVid(heroVid);
+      heroVid.play().catch(function () {});
+    };
+    var afterLoad = function () { setTimeout(startHero, 1200); };
+    if (document.readyState === 'complete') afterLoad();
+    else window.addEventListener('load', afterLoad);
+  }
   $$('.vctl').forEach(function (btn) {
     var v = document.getElementById(btn.dataset.video);
+    if (!v || (!v.dataset.src && !v.currentSrc)) return; /* no video file yet: the control stays hidden (hidden in the markup) */
+    btn.hidden = false;
     btn.addEventListener('click', function () {
       var paused = btn.getAttribute('aria-pressed') === 'true';
-      if (paused) { v.play(); } else { v.pause(); }
+      if (paused) { loadVid(v); v.play(); } else { v.pause(); }
       btn.setAttribute('aria-pressed', String(!paused));
       $('.vctl__txt', btn).textContent = paused ? 'Pause' : 'Play';
       v.dataset.userPaused = paused ? '' : '1';
@@ -133,7 +154,9 @@
   var splitEls = calm ? [] : $$(SPLIT).filter(function (el) { return !el.closest('dialog'); });
   var digitEls = calm ? [] : $$('.fig__n');
   function lineStep(el) { return el.classList.contains('card__t') || el.classList.contains('row__t') ? 0.06 : 0.09; }
-  function splitLines(el) {
+  /* Splitting runs in three passes over all headings (wrap words, measure, build lines), so the page lays out
+     once for the whole set instead of once per heading. */
+  function wrapWords(el) {
     if (el._orig == null) el._orig = el.innerHTML;
     else el.innerHTML = el._orig;
     var words = [], frag = document.createDocumentFragment();
@@ -153,6 +176,9 @@
       }
     });
     el.innerHTML = ''; el.appendChild(frag);
+    return words;
+  }
+  function measureLines(words) {
     var lines = [], cur = null, top = null;
     words.forEach(function (w) {
       if (w.nodeName === 'BR') { cur = null; top = null; return; }
@@ -160,6 +186,9 @@
       if (!cur || Math.abs(t - top) > 4) { cur = []; lines.push(cur); top = t; }
       cur.push(w);
     });
+    return lines;
+  }
+  function buildLines(el, lines) {
     var step = lineStep(el);
     el.innerHTML = '';
     lines.forEach(function (ws, i) {
@@ -203,22 +232,37 @@
       el.classList.add('split-done');
     }, wait);
   }
-  function doSplit() {
-    splitEls.forEach(function (el) {
-      if (el.classList.contains('in') || el._restored || el._unsplitting) return;
-      if (!el.classList.contains('hero__display')) el.classList.add('rv');
-      splitLines(el);
+  function doSplit(list) {
+    var todo = list.filter(function (el) {
+      return !(el.classList.contains('in') || el._restored || el._unsplitting);
     });
+    if (!todo.length) return;
+    var words = todo.map(wrapWords);                 /* writes */
+    var lines = words.map(measureLines);             /* one layout, then reads */
+    todo.forEach(function (el, i) { buildLines(el, lines[i]); }); /* writes */
   }
+  function splitAgain() { doSplit(splitEls.filter(function (el) { return el.classList.contains('split'); })); }
   if (splitEls.length || digitEls.length) {
     digitEls.forEach(splitDigits);
-    doSplit();
-    /* re-measure once the display font has loaded, and if the width changes before a heading reveals */
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(doSplit);
+    /* on a repeat visit the hero is already showing, so it is not split at all */
+    if (root.classList.contains('hero-in')) splitEls = splitEls.filter(function (el) { return !el.classList.contains('hero__display'); });
+    splitEls.forEach(function (el) { if (!el.classList.contains('hero__display')) el.classList.add('rv'); });
+    /* headings are split only as they come within a screen of view, a batch at a time, so loading the page
+       does not pay for measuring every heading on it */
+    if ('IntersectionObserver' in window) {
+      var splitIO = new IntersectionObserver(function (entries) {
+        var els = entries.filter(function (en) { return en.isIntersecting; }).map(function (en) { return en.target; });
+        els.forEach(function (el) { splitIO.unobserve(el); });
+        doSplit(els);
+      }, { rootMargin: '0px 0px 100% 0px' });
+      splitEls.forEach(function (el) { splitIO.observe(el); });
+    } else doSplit(splitEls);
+    /* re-measure split headings once the display font has loaded, and if the width changes before they reveal */
+    if (document.fonts && document.fonts.status !== 'loaded' && document.fonts.ready) document.fonts.ready.then(splitAgain);
     var lastW = window.innerWidth, rsT;
     window.addEventListener('resize', function () {
       if (window.innerWidth === lastW) return;
-      lastW = window.innerWidth; clearTimeout(rsT); rsT = setTimeout(doSplit, 150);
+      lastW = window.innerWidth; clearTimeout(rsT); rsT = setTimeout(splitAgain, 150);
     });
     var hd = $('.hero__display');
     if (hd) {
@@ -246,11 +290,16 @@
     }, { rootMargin: '0px 0px -10% 0px', threshold: 0.01 });
     /* backup for fast flicks: anything a scroll carried straight past (never "entering" the screen) still reveals */
     var sweepT = 0;
+    /* Sections off screen are skipped by the browser (content-visibility), so the sweep measures each
+       target's section first and only measures the target itself once its section is near the screen. */
     var sweep = function () {
       sweepT = 0;
-      var vh = window.innerHeight;
+      var vh = window.innerHeight, secTop = new Map();
       targets = targets.filter(function (t) {
         if (t._rvDone) return false;
+        var sec = t._sec || (t._sec = t.closest('main > section, footer') || document.body);
+        if (!secTop.has(sec)) secTop.set(sec, sec.getBoundingClientRect().top);
+        if (secTop.get(sec) > vh) return true;
         if (t.getBoundingClientRect().top < vh * 0.9) { reveal(t); return false; }
         return true;
       });
@@ -271,7 +320,7 @@
     if (lazyVid) {
       new IntersectionObserver(function (entries) {
         entries.forEach(function (en) {
-          if (en.isIntersecting) { if (!lazyVid.dataset.userPaused) lazyVid.play().catch(function () {}); }
+          if (en.isIntersecting) { if (!lazyVid.dataset.userPaused) { loadVid(lazyVid); lazyVid.play().catch(function () {}); } }
           else lazyVid.pause();
         });
       }, { rootMargin: '200px 0px' }).observe(lazyVid);
@@ -297,7 +346,7 @@
     var req = function () { if (!ticking) { ticking = true; requestAnimationFrame(move); } };
     window.addEventListener('scroll', req, { passive: true });
     window.addEventListener('resize', req);
-    move();
+    requestAnimationFrame(move);
   }
 
   /* --- Keyword tags: once the statement and tags are all in view the stage holds still, and as you keep
@@ -320,7 +369,20 @@
     var reqP = function () { if (!pTick) { pTick = true; requestAnimationFrame(setP); } };
     window.addEventListener('scroll', reqP, { passive: true });
     window.addEventListener('resize', reqP);
-    setP();
+    reqP();
+  }
+
+  /* --- Off-screen sections are skipped by the browser until close, which would also hold back their lazy
+         photos; start each section's photos loading about two screens ahead so they are ready on arrival. --- */
+  if ('IntersectionObserver' in window) {
+    var imgIO = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        imgIO.unobserve(en.target);
+        $$('img[loading="lazy"]', en.target).forEach(function (img) { img.loading = 'eager'; });
+      });
+    }, { rootMargin: '200% 0px' });
+    $$('main > section, footer').forEach(function (s) { imgIO.observe(s); });
   }
 
   /* --- Images that fail to load become labelled placeholders instead of broken icons --- */
